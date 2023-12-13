@@ -18,20 +18,25 @@ const gameBoard = () => {
         ];
     };
 
+    const resetBoard = () => {
+        board = [
+            '', '', '',
+            '', '', '',
+            '', '', '',
+        ];
+    }
+
     const getBoard = () => board;
 
     const placeMark = (playerMark, cell) => {
-        if (board[cell] === '') {
-            board[cell] = playerMark;
-        } else {
-            console.log("invalid option");
-        }
+        board[cell] = playerMark;
     };
 
     return {
         createBoard,
         getBoard,
         placeMark,
+        resetBoard,
     };
 };
 
@@ -41,6 +46,7 @@ const gameController = () => {
     const gameBoardFunctions = gameBoard();
     gameBoardFunctions.createBoard();
     let board = gameBoardFunctions.getBoard();
+    let message = `Player1's turn. Place your mark.`
     
     const getBoard = () => board;
 
@@ -56,27 +62,48 @@ const gameController = () => {
 
     const getCurrentPlayer = () => currentPlayer;
 
-    const printNewRound = () => {
-        console.log(board);
-        console.log(`${currentPlayer.name}'s turn. Place your mark.`);
+    const getScores = () => {
+        let player1Score = player1.score;
+        let player2Score = player2.score;
+        return {
+            player1Score,
+            player2Score,
+        }
+    }
+
+    const getMessage = () => message;
+
+    const playAgain = () => {
+        player1.marks = [];
+        player2.marks = [];
+        switchCurrentPlayer();
+        gameBoardFunctions.resetBoard();
+        board = gameBoardFunctions.getBoard();
     };
 
     const playRound = (cell) => {
-        gameBoardFunctions.placeMark(currentPlayer.mark, cell);
-        currentPlayer.marks.push(cell);
-        checkWin(currentPlayer.marks);
-        if (checkWin(currentPlayer.marks).win) {
-            console.log(`${currentPlayer.name} wins!`);
-            currentPlayer.score += 3;
-            return;
-        } else if (checkWin(currentPlayer.marks).draw) {
-            console.log('Draw!');
-            player1.score += 1;
-            player2.score += 1;
-            return;
+        if (board[cell] === '') {
+            gameBoardFunctions.placeMark(currentPlayer.mark, cell);
+            currentPlayer.marks.push(cell);
+            checkWin(currentPlayer.marks);
+            if (checkWin(currentPlayer.marks).win) {
+                message = `${currentPlayer.name} wins!`
+                currentPlayer.score += 3;
+                return message;
+            } else if (checkWin(currentPlayer.marks).draw) {
+                message = "Draw!";
+                player1.score += 1;
+                player2.score += 1;
+                return;
+            } else {
+                switchCurrentPlayer();
+        message = `${currentPlayer.name}'s turn. Place your mark.`;
+        return;
+            }
+            } else {
+                message = `Invalid selection. ${currentPlayer.name} try again.`;
+                return;
         }
-        switchCurrentPlayer();
-        printNewRound();
     };
 
     const checkWin = (marks) => {
@@ -105,11 +132,12 @@ const gameController = () => {
 
     return {
         playRound,
-        printNewRound,
         getCurrentPlayer,
         getBoard,
-        getPlayer1Score: player1.score,
-        getPlayer2Score: player2.score,
+        getScores,
+        getMessage,
+        playAgain,
+        checkWin,
     };
 };
 
@@ -118,30 +146,63 @@ const screenController = () => {
     const scoreDiv = document.getElementById('score');
     const turnDiv = document.getElementById('turn');
     const boardDiv = document.getElementById('board')
+    let message = game.getMessage();
 
     const updateScreen = () => {
         scoreDiv.textContent = '';
         turnDiv.textContent = '';
         boardDiv.textContent = '';
 
-        const board = game.getBoard();
-        const currentPlayer = game.getCurrentPlayer();
-        const player1Score = game.getPlayer1Score;
-        const player2Score = game.getPlayer2Score;
+        let board = game.getBoard();
+        let currentPlayer = game.getCurrentPlayer();
+        const player1Score = game.getScores().player1Score;
+        const player2Score = game.getScores().player2Score;
 
         scoreDiv.textContent = `Player 1: ${player1Score} - Player 2: ${player2Score}`;
 
-        turnDiv.textContent = `${currentPlayer.name}'s turn. Place your mark.`;
+        turnDiv.textContent = game.getMessage();
 
-        console.log(board);
+        const playAgain = () => {
+            const playButton = document.createElement('button');
+            playButton.textContent = "Play Again";
+            turnDiv.appendChild(playButton);
+            playButton.addEventListener('click', () => {
+                game.playAgain();
+                board = game.getBoard();
+                updateScreen();
+            })
+        }
 
+        if (
+            game.checkWin(currentPlayer.marks).win || 
+            game.checkWin(currentPlayer.marks).draw) {
+            playAgain();
+        }
+
+        let i = 0;
+        
         board.forEach((cell) => {
             const button = document.createElement('button');
-            button.setAttribute('id', cell);
+            button.setAttribute('id', i);
+            i++;
             boardDiv.appendChild(button);
-        })
+            button.textContent = cell;
+            if (button.textContent === 'X' || button.textContent === 'O') {
+                button.classList.add(cell);
+            }
+            button.addEventListener('click', () => {
+                message = game.message;
+                game.playRound(parseInt(button.id));
+                updateScreen();
+            });
+        });
+
+        
     };
     updateScreen();
+    return {
+        updateScreen,
+    }
 };
 
 screenController();
