@@ -40,13 +40,11 @@ const gameBoard = () => {
     };
 };
 
-const gameController = () => {
-    const player1 = createPlayer('Player1', 'X');
-    const player2 = createPlayer('Player2', 'O');
+const gameController = (player1, player2) => {
     const gameBoardFunctions = gameBoard();
     gameBoardFunctions.createBoard();
     let board = gameBoardFunctions.getBoard();
-    let message = `Player1's turn. Place your mark.`
+    let message = `${player1.name}'s turn. Place your mark.`;
     
     const getBoard = () => board;
 
@@ -79,6 +77,7 @@ const gameController = () => {
         switchCurrentPlayer();
         gameBoardFunctions.resetBoard();
         board = gameBoardFunctions.getBoard();
+        message = `${currentPlayer.name}'s turn. Place your mark.`
     };
 
     const playRound = (cell) => {
@@ -142,13 +141,93 @@ const gameController = () => {
 };
 
 const screenController = () => {
-    const game = gameController();
+    let game;
     const scoreDiv = document.getElementById('score');
     const turnDiv = document.getElementById('turn');
     const boardDiv = document.getElementById('board')
-    let message = game.getMessage();
+
+    const modalDiv = document.getElementById('modal');
+    const modalForm = document.createElement('form');
+    modalDiv.appendChild(modalForm);
+    const player1Label = document.createElement('label');
+    player1Label.setAttribute('for', 'player-1-input');
+    player1Label.textContent = "Player 1's name";
+    modalForm.appendChild(player1Label);
+    const player1Input = document.createElement('input');
+    player1Input.setAttribute('type', 'text');
+    player1Input.setAttribute('id', 'player-1-input');
+    player1Input.setAttribute('name', 'player-1-input');
+    player1Input.setAttribute('autofocus', 'autofocus');
+    modalForm.appendChild(player1Input);
+    const modalButtonsDiv = document.createElement('div');
+    modalButtonsDiv.setAttribute('id', 'modal-buttons-div');
+    modalForm.appendChild(modalButtonsDiv);
+    const player1Button = document.createElement('button');
+    player1Button.setAttribute('type', 'button');
+    player1Button.textContent = "Next";
+    modalButtonsDiv.appendChild(player1Button);
+    player1Button.addEventListener('click', () => {
+        let player1 = createPlayer(player1Input.value, 'X');
+        getPlayer2(player1);
+    });
+    player1Input.addEventListener('keypress', (event) => {
+        if (event.key === "Enter") {
+            let player1 = createPlayer(player1Input.value, 'X');
+            getPlayer2(player1);
+        }
+    });
+
+    const getPlayer2 = (player1) => {
+        player1Button.removeEventListener('click', () => {
+            let player1 = createPlayer(player1Input.value, 'X');
+            getPlayer2(player1);
+        });
+        player1Input.removeEventListener('keypress', (event) => {
+            if (event.key === "Enter") {
+                let player1 = createPlayer(player1Input.value, 'X');
+                getPlayer2(player1);
+            }
+        });
+        player1Button.remove();
+        while (modalForm.firstChild) {
+            modalForm.removeChild(modalForm.lastChild);
+        }
+        const player2Label = document.createElement('label');
+        player2Label.setAttribute('for', 'player-2-input');
+        player2Label.textContent = "Player 2's name";
+        modalForm.appendChild(player2Label);
+        const player2Input = document.createElement('input');
+        player2Input.setAttribute('type', 'text');
+        player2Input.setAttribute('id', 'player-2-input');
+        player2Input.setAttribute('name', 'player-2-input');
+        modalForm.appendChild(player2Input);
+        const modalButtonsDiv = document.createElement('div');
+        modalForm.appendChild(modalButtonsDiv);
+        const player2Button = document.createElement('button');
+        player2Button.setAttribute('type', 'button');
+        player2Button.textContent = "Play";
+        modalButtonsDiv.appendChild(player2Button);
+        player2Input.focus();
+        player2Button.addEventListener('click', () => {
+            let player2 = createPlayer(player2Input.value, 'O');
+            game = gameController(player1, player2);
+            updateScreen();
+        });
+        player2Input.addEventListener('keypress', (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            console.log("player2 enter happened");
+            let player2 = createPlayer(player2Input.value, 'O');
+            game = gameController(player1, player2);
+            updateScreen();
+        }
+    });
+    };
+
+    
 
     const updateScreen = () => {
+        modalDiv.setAttribute('style', 'display: none');
         scoreDiv.textContent = '';
         turnDiv.textContent = '';
         boardDiv.textContent = '';
@@ -199,7 +278,7 @@ const screenController = () => {
 
         
     };
-    updateScreen();
+    // updateScreen();
     return {
         updateScreen,
     }
